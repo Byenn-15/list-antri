@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Overlay Antrean 1v1 FF</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 15px;
+      background-color: transparent; /* Transparan untuk OBS */
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: white;
+    }
+    .container {
+      width: 340px;
+      background: rgba(15, 20, 30, 0.88);
+      border-radius: 12px;
+      padding: 15px;
+      border: 2px solid #ffaa00;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+    }
+    .header {
+      text-align: center;
+      font-size: 18px;
+      font-weight: 800;
+      color: #ffaa00;
+      margin-bottom: 12px;
+      letter-spacing: 1px;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+      padding-bottom: 8px;
+    }
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .tier-3 { background: linear-gradient(90deg, #b80000, #ff2a2a); border-left: 5px solid #ffd700; }
+    .tier-2 { background: linear-gradient(90deg, #6a0dad, #9b30ff); border-left: 5px solid #00ffff; }
+    .tier-1 { background: rgba(255, 255, 255, 0.12); border-left: 5px solid #aaaaaa; }
+    .badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(0,0,0,0.4);
+      margin-left: 6px;
+    }
+    .empty {
+      text-align: center;
+      color: #aaa;
+      font-size: 13px;
+      padding: 15px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">🔥 ANTREAN 1V1 FREE FIRE 🔥</div>
+    <div id="queue-list" class="list">
+      <div class="empty">Belum ada antrean. Yuk donasi!</div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const listEl = document.getElementById('queue-list');
+
+    socket.on('queue_update', (queue) => {
+      if (queue.length === 0) {
+        listEl.innerHTML = '<div class="empty">Belum ada antrean. Yuk donasi!</div>';
+        return;
+      }
+
+      // Tampilkan maksimal 8 antrean teratas agar layar OBS tidak penuh
+      const topQueue = queue.slice(0, 8);
+      listEl.innerHTML = topQueue.map((item, index) => `
+        <div class="item tier-${item.tier}">
+          <div>
+            <span>#${index + 1} ${item.name}</span>
+            <span class="badge">${item.tierName}</span>
+          </div>
+          <div>Rp${item.amount.toLocaleString('id-ID')}</div>
+        </div>
+      `).join('');
+    });
+  </script>
+</body>
+</html>

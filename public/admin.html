@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Antrean 1v1 FF</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #121212;
+      color: #fff;
+      margin: 0;
+      padding: 15px;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .btn-clear {
+      background: #d9534f;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .card {
+      background: #1e1e1e;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 12px;
+      border-left: 6px solid #888;
+    }
+    .card.tier-3 { border-color: #ff2a2a; }
+    .card.tier-2 { border-color: #9b30ff; }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+    .ff-id-box {
+      background: #2c2c2c;
+      padding: 8px 12px;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 8px 0;
+    }
+    .ff-id-text {
+      font-family: monospace;
+      font-size: 18px;
+      color: #00ffcc;
+      font-weight: bold;
+    }
+    .btn-copy {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .msg {
+      font-size: 13px;
+      color: #bbb;
+      margin-bottom: 10px;
+      font-style: italic;
+    }
+    .btn-done {
+      width: 100%;
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    /* Form Tes Simulasi Donasi */
+    .test-box {
+      background: #1a2634;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .test-box input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px;
+      margin-bottom: 8px;
+      border-radius: 5px;
+      border: none;
+    }
+    .btn-test {
+      width: 100%;
+      background: #ffaa00;
+      color: #000;
+      font-weight: bold;
+      border: none;
+      padding: 8px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <h2>🎮 Kontrol Antrean 1v1</h2>
+    <button class="btn-clear" onclick="clearAll()">Reset Semua</button>
+  </div>
+
+  <!-- Kotak Simulasi untuk Tes Tanpa Keluar Uang -->
+  <div class="test-box">
+    <div style="font-size: 13px; font-weight: bold; margin-bottom: 8px;">🧪 Tes Simulasi Donasi Masuk:</div>
+    <input type="text" id="testName" placeholder="Nama Penonton (misal: Budi_FF)">
+    <input type="number" id="testAmount" placeholder="Nominal (misal: 3000)">
+    <input type="text" id="testMsg" placeholder="Pesan (misal: ayo bg 11 628373738)">
+    <button class="btn-test" onclick="sendTest()">Kirim Simulasi Donasi</button>
+  </div>
+
+  <div id="admin-list"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const adminListEl = document.getElementById('admin-list');
+
+    socket.on('queue_update', (queue) => {
+      if (queue.length === 0) {
+        adminListEl.innerHTML = '<p style="text-align:center; color:#777;">Antrean kosong.</p>';
+        return;
+      }
+
+      adminListEl.innerHTML = queue.map((item, idx) => `
+        <div class="card tier-${item.tier}">
+          <div class="card-header">
+            <span>#${idx + 1} ${item.name} (${item.tierName})</span>
+            <span style="color:#ffaa00;">Rp${item.amount.toLocaleString('id-ID')}</span>
+          </div>
+          <div class="ff-id-box">
+            <span class="ff-id-text">${item.ffId}</span>
+            ${item.ffId !== '-' ? `<button class="btn-copy" onclick="copyID('${item.ffId}')">Salin ID</button>` : ''}
+          </div>
+          <div class="msg">Pesan asli: "${item.message}"</div>
+          <button class="btn-done" onclick="removePlayer('${item.id}')">✅ Selesai Main / Hapus</button>
+        </div>
+      `).join('');
+    });
+
+    function copyID(id) {
+      navigator.clipboard.writeText(id);
+      alert('ID FF berhasil disalin: ' + id);
+    }
+
+    function removePlayer(id) {
+      socket.emit('remove_player', id);
+    }
+
+    function clearAll() {
+      if (confirm('Yakin ingin menghapus semua antrean?')) {
+        socket.emit('clear_all');
+      }
+    }
+
+    function sendTest() {
+      const supporter = document.getElementById('testName').value || 'Tester_Pro';
+      const amount = document.getElementById('testAmount').value || 3000;
+      const message = document.getElementById('testMsg').value || 'ayo bg 11 628373738';
+
+      fetch('/webhook/sociabuzz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ supporter, amount_raw: amount, message })
+      });
+    }
+  </script>
+</body>
+</html>
