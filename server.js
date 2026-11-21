@@ -117,12 +117,28 @@ server.listen(PORT, '0.0.0.0', async () => {
     }
 
     // Membuat link HTTPS gratis otomatis via Cloudflare Tunnel
+const { tunnel, install, bin } = require('cloudflared');
+const fs = require('fs');
+
+const PORT = process.env.SERVER_PORT || process.env.PORT || 3513;
+server.listen(PORT, '0.0.0.0', async () => {
+  console.log(`Server lokal berjalan di port ${PORT}`);
+  
+  try {
+    if (!fs.existsSync(bin)) {
+      console.log('Mengunduh komponen Cloudflare Tunnel, tunggu sebentar...');
+      await install(bin);
+    }
+
+    // Tambahkan await di depan url
     const { url } = await tunnel({ '--url': `http://localhost:${PORT}` });
+    const finalUrl = await url;
     console.log('====================================');
-    console.log('LINK HTTPS BARU KAMU:', url);
+    console.log('LINK HTTPS BARU KAMU:', finalUrl);
     console.log('====================================');
   } catch (err) {
     console.error('Gagal menjalankan Cloudflare Tunnel:', err);
   }
 });
+
 
