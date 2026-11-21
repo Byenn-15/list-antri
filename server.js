@@ -109,17 +109,14 @@ server.listen(PORT, '0.0.0.0', async () => {
     if (!fs.existsSync(bin)) {
       await install(bin);
     }
-    const cf = spawn(bin, ['tunnel', '--url', `http://localhost:${PORT}`]);
-    const handleOutput = (data) => {
-      const match = data.toString().match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/);
-      if (match) {
-        console.log('====================================');
-        console.log('LINK HTTPS BARU KAMU:', match);
-        console.log('====================================');
+    const cf = spawn(bin, ['tunnel', 'run', '--token', 'eyJhIjoiNzRiNTZkM2VlZWNlMWU2YjdkOGI4MjFiM2I3NzNhYjEiLCJ0IjoiNjJmZTQ4NmUtYmUwZS00ZjMwLWJhODItMWI5ZDgwODkyMWM3IiwicyI6Ik5USm1abVk0TkRVdFl6VTVPQzAwTm1KbUxXSTBNekF0WmpRMVpqaGxZalEyTmpOaSJ9']);
+
+    cf.stderr.on('data', (data) => {
+      const text = data.toString();
+      if (text.includes('Registered tunnel connection')) {
+        console.log('✅ TUNNEL PERMANEN TERHUBUNG!');
       }
-    };
-    cf.stdout.on('data', handleOutput);
-    cf.stderr.on('data', handleOutput);
+    });
   } catch (err) {
     console.error('Gagal menjalankan Cloudflare Tunnel:', err);
   }
