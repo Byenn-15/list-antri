@@ -5,81 +5,246 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Antrean 1v1 FF</title>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; background: #121212; color: #fff; margin: 0; padding: 15px; }
-    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-    .btn-clear { background: #d9534f; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-    .box { background: #1e1e1e; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #333; }
-    .price-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
-    .price-grid label { font-size: 11px; color: #aaa; display: block; margin-bottom: 3px; }
-    input { width: 100%; box-sizing: border-box; padding: 8px; border-radius: 5px; border: 1px solid #444; background: #2c2c2c; color: #fff; }
-    .btn-save { width: 100%; background: #00c853; color: #000; font-weight: bold; border: none; padding: 8px; border-radius: 5px; cursor: pointer; }
-    .btn-test { width: 100%; background: #ffaa00; color: #000; font-weight: bold; border: none; padding: 8px; border-radius: 5px; cursor: pointer; margin-top: 6px; }
-    .card { background: #1e1e1e; border-radius: 10px; padding: 15px; margin-bottom: 12px; border-left: 6px solid #888; transition: opacity 0.2s; }
-    .card.tier-3 { border-color: #ff2a2a; }
-    .card.tier-2 { border-color: #9b30ff; }
-    .card.is-hidden { opacity: 0.55; border-style: dashed; background: #161616; }
-    .card-header { display: flex; justify-content: space-between; font-weight: bold; font-size: 15px; margin-bottom: 8px; gap: 8px; }
-    .hidden-badge { background: #555; color: #fff; font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-left: 5px; }
-    .ff-id-box { background: #2c2c2c; padding: 8px 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; margin: 8px 0; }
-    .ff-id-text { font-family: monospace; font-size: 17px; color: #00ffcc; font-weight: bold; }
-    .btn-copy { background: #007bff; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-    .msg { font-size: 13px; color: #bbb; margin-bottom: 10px; font-style: italic; }
-    .action-row { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 6px; }
-    .btn-edit { background: #ff9800; color: #000; border: none; padding: 9px 6px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; }
-    .btn-hide { background: #607d8b; color: white; border: none; padding: 9px 6px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; }
-    .btn-show { background: #00bcd4; color: #000; border: none; padding: 9px 6px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; }
-    .btn-done { background: #28a745; color: white; border: none; padding: 9px 6px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; }
-    /* Modal Edit */
-    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; padding: 15px; z-index: 99; }
-    .modal-content { background: #1e1e1e; padding: 18px; border-radius: 10px; width: 100%; max-width: 360px; border: 1px solid #444; }
-    .modal-content label { font-size: 12px; color: #bbb; display: block; margin-top: 10px; margin-bottom: 4px; }
-    .modal-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
+    :root {
+      --bg: #0d0d0f;
+      --surface: #141416;
+      --surface-2: #1b1b1e;
+      --line: #26262a;
+      --line-strong: #34343a;
+      --text: #ededf0;
+      --muted: #85858e;
+      --faint: #5a5a62;
+      --danger: #e5645f;
+      --tier-2: #a78bfa;
+      --tier-3: #f0716b;
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 32px 20px 64px;
+      font-size: 14px;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 980px; margin: 0 auto; }
+    button { font-family: inherit; cursor: pointer; }
+    button:focus-visible, input:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+    /* ---------- Header ---------- */
+    .top-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 16px; flex-wrap: wrap; margin-bottom: 28px;
+    }
+    .top-bar h2 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* ---------- Buttons ---------- */
+    .btn {
+      background: transparent; color: var(--text);
+      border: 1px solid var(--line-strong);
+      padding: 8px 14px; border-radius: 8px;
+      font-size: 13px; font-weight: 500;
+      transition: background .15s, border-color .15s, color .15s;
+    }
+    .btn:hover { background: var(--surface-2); border-color: #44444b; }
+    .btn-primary { background: var(--text); color: #0d0d0f; border-color: var(--text); }
+    .btn-primary:hover { background: #fff; border-color: #fff; }
+    .btn-danger { color: var(--danger); border-color: #3a2323; }
+    .btn-danger:hover { background: #221515; border-color: #5a2f2d; }
+
+    /* ---------- Modal (dipakai semua pop-up) ---------- */
+    .modal {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.65); backdrop-filter: blur(2px);
+      justify-content: center; align-items: center; padding: 16px; z-index: 99;
+    }
+    .modal-content {
+      background: var(--surface); padding: 22px; border-radius: 14px;
+      width: 100%; max-width: 380px; border: 1px solid var(--line-strong);
+    }
+    .modal-content h3 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+    .modal-sub { margin: 0 0 8px; font-size: 12.5px; color: var(--muted); }
+    .modal-content label {
+      font-size: 12px; color: var(--muted); display: block;
+      margin-top: 14px; margin-bottom: 6px;
+    }
+    input {
+      width: 100%; padding: 9px 11px; border-radius: 8px;
+      border: 1px solid var(--line-strong); background: var(--bg);
+      color: var(--text); font-family: inherit; font-size: 14px;
+    }
+    input::placeholder { color: var(--faint); }
+    input:focus { border-color: #55555d; outline: none; }
+    .price-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .price-grid label { margin-top: 14px; }
+    .modal-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 22px; }
+    .modal-btns .btn { padding: 10px; }
+
+    /* ---------- Daftar antrean ---------- */
+    .list-head, .card {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1.5fr) minmax(0, 1fr) 100px auto;
+      grid-template-areas: "rank who id amount actions";
+      align-items: center; column-gap: 16px;
+    }
+    .list-head {
+      padding: 0 16px 10px; font-size: 11px; color: var(--faint);
+      text-transform: uppercase; letter-spacing: .06em;
+    }
+    .list-head span:nth-child(4) { text-align: right; }
+    #admin-list { border-top: 1px solid var(--line); }
+
+    .card {
+      position: relative;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      transition: background .15s, opacity .2s;
+    }
+    .card:hover { background: var(--surface); }
+    .card::before {
+      content: ''; position: absolute; left: 0; top: 14px; bottom: 14px;
+      width: 2px; border-radius: 2px; background: transparent;
+    }
+    .card.tier-2::before { background: var(--tier-2); }
+    .card.tier-3::before { background: var(--tier-3); }
+    .card.is-hidden { opacity: 0.45; }
+
+    .rank { grid-area: rank; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .who { grid-area: who; min-width: 0; }
+    .who-name { font-weight: 600; font-size: 14.5px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .tier-tag {
+      font-size: 11px; font-weight: 500; color: var(--muted);
+      border: 1px solid var(--line-strong); padding: 1px 7px; border-radius: 999px;
+    }
+    .card.tier-2 .tier-tag { color: var(--tier-2); border-color: #3b3358; }
+    .card.tier-3 .tier-tag { color: var(--tier-3); border-color: #55292a; }
+    .hidden-badge { font-size: 11px; color: var(--faint); }
+    .msg {
+      margin-top: 3px; font-size: 12.5px; color: var(--muted);
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      word-break: break-word;
+    }
+
+    .ff-id-box { grid-area: id; display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .ff-id-text {
+      font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+      font-size: 14px; color: var(--text); letter-spacing: .02em; overflow: hidden; text-overflow: ellipsis;
+    }
+    .btn-copy {
+      background: transparent; color: var(--muted); border: 1px solid var(--line-strong);
+      padding: 3px 9px; border-radius: 6px; font-size: 12px; transition: color .15s, border-color .15s;
+    }
+    .btn-copy:hover { color: var(--text); border-color: #55555d; }
+
+    .amount { grid-area: amount; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+    .action-row { grid-area: actions; display: flex; gap: 6px; justify-content: flex-end; }
+    .btn-edit, .btn-hide, .btn-show, .btn-done {
+      border-radius: 7px; padding: 7px 11px; font-size: 12.5px; font-weight: 500;
+      border: 1px solid var(--line-strong); background: transparent; color: var(--muted);
+      transition: background .15s, color .15s, border-color .15s; white-space: nowrap;
+    }
+    .btn-edit:hover, .btn-hide:hover, .btn-show:hover { color: var(--text); background: var(--surface-2); }
+    .btn-show { color: var(--text); }
+    .btn-done { background: var(--text); color: #0d0d0f; border-color: var(--text); }
+    .btn-done:hover { background: #fff; }
+
+    .empty { text-align: center; color: var(--faint); padding: 56px 0; margin: 0; }
+
+    /* ---------- HP / layar sempit ---------- */
+    @media (max-width: 760px) {
+      body { padding: 20px 14px 48px; }
+      .list-head { display: none; }
+      #admin-list { border-top: none; display: flex; flex-direction: column; gap: 10px; }
+      .card {
+        grid-template-columns: 28px 1fr auto;
+        grid-template-areas:
+          "rank who amount"
+          "id id id"
+          "actions actions actions";
+        row-gap: 10px; column-gap: 10px;
+        background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+        padding: 14px;
+      }
+      .card::before { left: 0; top: 12px; bottom: 12px; }
+      .action-row { justify-content: stretch; }
+      .action-row button { flex: 1; padding: 9px 6px; }
+      .ff-id-box { justify-content: space-between; background: var(--bg); border-radius: 8px; padding: 8px 10px; }
+    }
   </style>
 </head>
 <body>
-  <div class="top-bar">
-    <h2>🎮 Kontrol Antrean 1v1</h2>
-    <button class="btn-clear" onclick="clearAll()">Reset Semua</button>
-  </div>
+  <div class="wrap">
 
-  <!-- Pengaturan Harga Real-Time -->
-  <div class="box">
-    <div style="font-size: 13px; font-weight: bold; margin-bottom: 8px; color: #00ffcc;">⚙️ Atur Tarif Donasi (Rp):</div>
-    <div class="price-grid">
-      <div><label>Biasa</label><input type="number" id="priceRegular" value="1000"></div>
-      <div><label>VIP</label><input type="number" id="priceVip" value="2000"></div>
-      <div><label>Skip All</label><input type="number" id="priceSkipAll" value="3000"></div>
+    <div class="top-bar">
+      <h2>Kontrol Antrean 1v1</h2>
+      <div class="toolbar">
+        <button class="btn" onclick="openPrices()">Atur Tarif</button>
+        <button class="btn" onclick="openAdd()">Tambah Manual</button>
+        <button class="btn btn-danger" onclick="clearAll()">Reset Semua</button>
+      </div>
     </div>
-    <button class="btn-save" onclick="savePrices()">Simpan Tarif Baru</button>
+
+    <div class="list-head">
+      <span>#</span><span>Pemain</span><span>ID Free Fire</span><span>Donasi</span><span></span>
+    </div>
+    <div id="admin-list"></div>
+
   </div>
 
-  <!-- Kotak Tambah / Tes Manual -->
-  <div class="box">
-    <div style="font-size: 13px; font-weight: bold; margin-bottom: 8px;">➕ Tambah Manual / Tes Simulasi:</div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px;">
+  <!-- Pop-up Atur Tarif -->
+  <div id="pricesModal" class="modal">
+    <div class="modal-content">
+      <h3>Atur Tarif Donasi</h3>
+      <p class="modal-sub">Dalam Rupiah</p>
+      <div class="price-grid">
+        <div><label>Biasa</label><input type="number" id="priceRegular" value="1000"></div>
+        <div><label>VIP</label><input type="number" id="priceVip" value="2000"></div>
+        <div><label>Skip All</label><input type="number" id="priceSkipAll" value="3000"></div>
+      </div>
+      <div class="modal-btns">
+        <button class="btn" onclick="closePrices()">Batal</button>
+        <button class="btn btn-primary" onclick="savePrices(); closePrices()">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pop-up Tambah Manual -->
+  <div id="addModal" class="modal">
+    <div class="modal-content">
+      <h3>Tambah Manual</h3>
+      <p class="modal-sub">Masukkan pemain ke antrean / tes simulasi</p>
+      <label>Nama Pemain</label>
       <input type="text" id="testName" placeholder="Nama Pemain">
-      <input type="number" id="testAmount" placeholder="Nominal (misal: 3000)">
+      <label>Nominal (Rp)</label>
+      <input type="number" id="testAmount" placeholder="misal: 3000">
+      <label>ID FF / Pesan</label>
+      <input type="text" id="testMsg" placeholder="misal: 628373738">
+      <div class="modal-btns">
+        <button class="btn" onclick="closeAdd()">Batal</button>
+        <button class="btn btn-primary" onclick="sendTest(); closeAdd()">Masukkan</button>
+      </div>
     </div>
-    <input type="text" id="testMsg" placeholder="ID FF / Pesan (misal: 628373738)">
-    <button class="btn-test" onclick="sendTest()">Masukkan ke Antrean</button>
   </div>
-
-  <div id="admin-list"></div>
 
   <!-- Pop-up Modal Edit -->
   <div id="editModal" class="modal">
     <div class="modal-content">
-      <h3 style="margin:0 0 10px 0; color:#ffaa00;">✏️ Edit Data Pemain</h3>
+      <h3>Edit Data Pemain</h3>
       <input type="hidden" id="editId">
-      <label>Nama Pemain:</label>
+      <label>Nama Pemain</label>
       <input type="text" id="editName">
-      <label>Total Nominal Donasi (Rp):</label>
+      <label>Total Nominal Donasi (Rp)</label>
       <input type="number" id="editAmount">
-      <label>ID Free Fire:</label>
+      <label>ID Free Fire</label>
       <input type="text" id="editFfId">
       <div class="modal-btns">
-        <button class="btn-clear" onclick="closeModal()">Batal</button>
-        <button class="btn-save" onclick="submitEdit()">Simpan Perubahan</button>
+        <button class="btn" onclick="closeModal()">Batal</button>
+        <button class="btn btn-primary" onclick="submitEdit()">Simpan</button>
       </div>
     </div>
   </div>
@@ -107,34 +272,36 @@
     socket.on('admin_queue_update', (queue) => {
       currentQueue = queue;
       if (queue.length === 0) {
-        adminListEl.innerHTML = '<p style="text-align:center; color:#777;">Antrean kosong.</p>';
+        adminListEl.innerHTML = '<p class="empty">Antrean kosong.</p>';
         return;
       }
 
       let visibleRank = 0;
       adminListEl.innerHTML = queue.map((item) => {
         if (!item.hidden) visibleRank++;
-        const rankLabel = item.hidden ? '⏸️' : `#${visibleRank}`;
+        const rankLabel = item.hidden ? '–' : `${visibleRank}`;
         return `
           <div class="card tier-${item.tier} ${item.hidden ? 'is-hidden' : ''}">
-            <div class="card-header">
-              <span>
-                ${rankLabel} ${item.name} (${item.tierName})
-                ${item.hidden ? '<span class="hidden-badge">DISEMBUNYIKAN</span>' : ''}
-              </span>
-              <span style="color:#ffaa00;">Rp${item.amount.toLocaleString('id-ID')}</span>
+            <div class="rank">${rankLabel}</div>
+            <div class="who">
+              <div class="who-name">
+                <span>${item.name}</span>
+                <span class="tier-tag">${item.tierName}</span>
+                ${item.hidden ? '<span class="hidden-badge">Disembunyikan</span>' : ''}
+              </div>
+              <div class="msg">${item.message}</div>
             </div>
             <div class="ff-id-box">
               <span class="ff-id-text">${item.ffId}</span>
-              ${item.ffId !== '-' ? `<button class="btn-copy" onclick="copyID('${item.ffId}')">Salin ID</button>` : ''}
+              ${item.ffId !== '-' ? `<button class="btn-copy" onclick="copyID('${item.ffId}')">Salin</button>` : ''}
             </div>
-            <div class="msg">Pesan: "${item.message}"</div>
+            <div class="amount">Rp${item.amount.toLocaleString('id-ID')}</div>
             <div class="action-row">
-              <button class="btn-edit" onclick="openEdit('${item.id}')">✏️ Edit</button>
+              <button class="btn-edit" onclick="openEdit('${item.id}')">Edit</button>
               <button class="${item.hidden ? 'btn-show' : 'btn-hide'}" onclick="toggleHide('${item.id}')">
-                ${item.hidden ? '👁️ Tampilkan' : '🙈 Sembunyikan'}
+                ${item.hidden ? 'Tampilkan' : 'Sembunyikan'}
               </button>
-              <button class="btn-done" onclick="removePlayer('${item.id}')">✅ Selesai</button>
+              <button class="btn-done" onclick="removePlayer('${item.id}')">Selesai</button>
             </div>
           </div>
         `;
@@ -196,6 +363,20 @@
       document.getElementById('testAmount').value = '';
       document.getElementById('testMsg').value = '';
     }
-      </script>
+
+    /* ---- Buka/tutup pop-up (tampilan saja) ---- */
+    function openPrices() { document.getElementById('pricesModal').style.display = 'flex'; }
+    function closePrices() { document.getElementById('pricesModal').style.display = 'none'; }
+    function openAdd() { document.getElementById('addModal').style.display = 'flex'; }
+    function closeAdd() { document.getElementById('addModal').style.display = 'none'; }
+
+    // klik area gelap / tekan Esc untuk nutup pop-up
+    document.querySelectorAll('.modal').forEach(m => {
+      m.addEventListener('mousedown', e => { if (e.target === m) m.style.display = 'none'; });
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+    });
+  </script>
 </body>
 </html>
