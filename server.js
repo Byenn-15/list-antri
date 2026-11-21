@@ -3,7 +3,8 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const fs = require('fs');
-const { tunnel, install, bin } = require('cloudflared');
+const { spawn } = require('child_process');
+const { install, bin } = require('cloudflared');
 
 const app = express();
 const server = http.createServer(app);
@@ -91,7 +92,7 @@ io.on('connection', (socket) => {
   });
 });
 
-// Menjalankan server & membuat link HTTPS Cloudflare otomatis
+// Menjalankan server & menangkap link HTTPS Cloudflare langsung dari log proses
 const PORT = process.env.SERVER_PORT || process.env.PORT || 3513;
 server.listen(PORT, '0.0.0.0', async () => {
   console.log(`Server lokal berjalan di port ${PORT}`);
@@ -102,11 +103,20 @@ server.listen(PORT, '0.0.0.0', async () => {
       await install(bin);
     }
 
-    const { url } = await tunnel({ '--url': `http://localhost:${PORT}` });
-    const finalUrl = await url;
-    console.log('====================================');
-    console.log('LINK HTTPS BARU KAMU:', finalUrl);
-    console.log('====================================');
+    const cf = spawn(bin, ['tunnel', '--url', `http://localhost:${PORT}`]);
+    
+    const handleOutput = (data) => {
+      const text = data.toString();
+      const match = text.match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/);
+      if (match) {
+        console.log('====================================');
+        console.log('LINK HTTPS BARU KAMU:', match[0]);
+        console.log('====================================');
+      }
+    };
+
+    cf.stdout.on('data', handleOutput);
+    cf.stderr.on('data', handleOutput);
   } catch (err) {
     console.error('Gagal menjalankan Cloudflare Tunnel:', err);
   }
