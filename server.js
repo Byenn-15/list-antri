@@ -102,15 +102,27 @@ io.on('connection', (socket) => {
 });
 
 // Jalankan server di port dinamis (wajib untuk hosting gratis) atau 3000 di lokal
-const { tunnel } = require('cloudflared');
+const { tunnel, install, bin } = require('cloudflared');
+const fs = require('fs');
 
 const PORT = process.env.SERVER_PORT || process.env.PORT || 3513;
 server.listen(PORT, '0.0.0.0', async () => {
   console.log(`Server lokal berjalan di port ${PORT}`);
   
-  // Membuat link HTTPS gratis otomatis via Cloudflare Tunnel
-  const { url } = await tunnel({ '--url': `http://localhost:${PORT}` });
-  console.log('====================================');
-  console.log('LINK HTTPS BARU KAMU:', url);
-  console.log('====================================');
+  try {
+    // Unduh mesin cloudflared secara manual jika terblokir oleh npm
+    if (!fs.existsSync(bin)) {
+      console.log('Mengunduh komponen Cloudflare Tunnel, tunggu sebentar...');
+      await install(bin);
+    }
+
+    // Membuat link HTTPS gratis otomatis via Cloudflare Tunnel
+    const { url } = await tunnel({ '--url': `http://localhost:${PORT}` });
+    console.log('====================================');
+    console.log('LINK HTTPS BARU KAMU:', url);
+    console.log('====================================');
+  } catch (err) {
+    console.error('Gagal menjalankan Cloudflare Tunnel:', err);
+  }
 });
+
