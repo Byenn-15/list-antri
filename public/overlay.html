@@ -2,95 +2,147 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Overlay Antrean 1v1 FF</title>
+  <title>Overlay Antrean 1v1 FF (Horizontal)</title>
   <style>
-    body {
+    :root {
+      --scroll-speed: 50;  /* kecepatan (px per detik), makin kecil makin pelan */
+      --loop-gap: 200px;   /* JARAK KOSONG antara akhir antrean dan awal antrean lagi. Kecilin = muncul lagi lebih cepet */
+      --item-gap: 12px;    /* jarak kiri-kanan tanda | */
+      --font-size: 10px;
+    }
+
+    html, body {
+      width: 100%;
       margin: 0;
-      padding: 15px;
+      padding: 0;
+      overflow: hidden;
       background-color: transparent; /* Transparan untuk OBS */
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      color: white;
+      color: #fff;
     }
-    .container {
-      width: 340px;
-      background: rgba(15, 20, 30, 0.88);
-      border-radius: 12px;
-      padding: 15px;
-      border: 2px solid #ffaa00;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+
+    .ticker {
+      width: 100%;
+      overflow: hidden;
+      white-space: nowrap;
+      padding: 6px 0;
     }
-    .header {
-      text-align: center;
-      font-size: 18px;
-      font-weight: 800;
-      color: #ffaa00;
-      margin-bottom: 12px;
-      letter-spacing: 1px;
-      border-bottom: 1px solid rgba(255,255,255,0.2);
-      padding-bottom: 8px;
-    }
-    .list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .item {
-      display: flex;
-      justify-content: space-between;
+
+    .track {
+      display: inline-flex;
       align-items: center;
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-weight: bold;
-      font-size: 14px;
+      font-size: var(--font-size);
+      font-weight: 700;
+      will-change: transform;
     }
-    .tier-3 { background: linear-gradient(90deg, #b80000, #ff2a2a); border-left: 5px solid #ffd700; }
-    .tier-2 { background: linear-gradient(90deg, #6a0dad, #9b30ff); border-left: 5px solid #00ffff; }
-    .tier-1 { background: rgba(255, 255, 255, 0.12); border-left: 5px solid #aaaaaa; }
-    .badge {
-      font-size: 10px;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: rgba(0,0,0,0.4);
+    .track.animate {
+      animation: run var(--duration, 20s) linear infinite;
+    }
+    @keyframes run {
+      from { transform: translateX(0); }
+      to   { transform: translateX(calc(-1 * var(--shift, 0px))); }
+    }
+
+    .unit {
+      display: inline-flex;
+      align-items: center;
+      flex-shrink: 0;
+      padding-right: var(--loop-gap);
+    }
+
+    .label {
+      font-weight: 900;
+    }
+    .sep {
+      margin: 0 var(--item-gap);
+      opacity: 0.6;
+    }
+    .item.top {
+      font-weight: 900;
+    }
+    .item .tier {
+      margin-left: 8px;
+    }
+    .item .amount {
       margin-left: 6px;
     }
     .empty {
-      text-align: center;
-      color: #aaa;
-      font-size: 13px;
-      padding: 15px 0;
+      opacity: 0.7;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">🔥 ANTREAN 1V1 FREE FIRE 🔥</div>
-    <div id="queue-list" class="list">
-      <div class="empty">Belum ada antrean. Yuk donasi!</div>
+  <div id="ticker" class="ticker">
+    <div id="track" class="track">
+      <span class="label">LIST ANTRIAN</span><span class="sep">|</span><span class="empty">Belum ada antrean. Yuk donasi!</span>
     </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    const socket = io();
-    const listEl = document.getElementById('queue-list');
+    const LABEL = 'LIST ANTRIAN';
 
-    socket.on('queue_update', (queue) => {
-      if (queue.length === 0) {
-        listEl.innerHTML = '<div class="empty">Belum ada antrean. Yuk donasi!</div>';
+    const socket = io();
+    const tickerEl = document.getElementById('ticker');
+    const trackEl = document.getElementById('track');
+
+    let lastData = '';
+
+    // Biar nama dari donatur gak bisa nyisipin HTML
+    function esc(str) {
+      return String(str).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+    }
+
+    function contentHTML(queue) {
+      const items = queue.map((item, index) => `
+        <span class="item${item.tier >= 3 ? ' top' : ''}">${index + 1}. ${esc(item.name)}<span class="tier">${esc(item.tierName)}</span><span class="amount">(${Number(item.amount).toLocaleString('en-US')})</span></span>
+      `);
+      return `<span class="unit"><span class="label">${LABEL}</span>` +
+        items.map(h => `<span class="sep">|</span>${h}`).join('') + `</span>`;
+    }
+
+    function render(queue) {
+      trackEl.classList.remove('animate');
+
+      if (!queue || queue.length === 0) {
+        trackEl.innerHTML = `<span class="label">${LABEL}</span><span class="sep">|</span><span class="empty">Belum ada antrean. Yuk donasi!</span>`;
+        trackEl.style.transform = 'none';
         return;
       }
 
-      // Tampilkan maksimal 8 antrean teratas agar layar OBS tidak penuh
-      const topQueue = queue.slice(0, 8);
-      listEl.innerHTML = topQueue.map((item, index) => `
-        <div class="item tier-${item.tier}">
-          <div>
-            <span>#${index + 1} ${item.name}</span>
-            <span class="badge">${item.tierName}</span>
-          </div>
-          <div>Rp${item.amount.toLocaleString('id-ID')}</div>
-        </div>
-      `).join('');
+      trackEl.style.transform = '';
+
+      // Render 1 unit dulu buat ngukur lebarnya (sudah termasuk jarak kosong --loop-gap)
+      trackEl.innerHTML = contentHTML(queue);
+      const unitW = trackEl.firstElementChild.offsetWidth;
+      const viewW = tickerEl.offsetWidth;
+      const speed = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scroll-speed')) || 90;
+
+      // Ulang secukupnya biar layar selalu keisi dan muternya mulus
+      const copies = Math.ceil(viewW / unitW) + 1;
+      trackEl.innerHTML = contentHTML(queue).repeat(copies);
+
+      trackEl.style.setProperty('--shift', unitW + 'px');
+      trackEl.style.setProperty('--duration', (unitW / speed) + 's');
+
+      // force reflow supaya animasi mulai ulang dari awal
+      void trackEl.offsetHeight;
+      trackEl.classList.add('animate');
+    }
+
+    socket.on('queue_update', (queue) => {
+      // Kalau data sama persis, jangan render ulang (biar jalannya gak ke-reset)
+      const snapshot = JSON.stringify(queue);
+      if (snapshot === lastData) return;
+      lastData = snapshot;
+      render(queue);
+    });
+
+    // Hitung ulang kalau ukuran layar/browser source berubah
+    window.addEventListener('resize', () => {
+      if (lastData) render(JSON.parse(lastData));
     });
   </script>
 </body>

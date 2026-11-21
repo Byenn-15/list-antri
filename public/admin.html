@@ -11,18 +11,29 @@
     .box { background: #1e1e1e; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #333; }
     .price-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
     .price-grid label { font-size: 11px; color: #aaa; display: block; margin-bottom: 3px; }
-    input { width: 100%; box-sizing: border-box; padding: 8px; border-radius: 5px; border: none; background: #2c2c2c; color: #fff; }
+    input { width: 100%; box-sizing: border-box; padding: 8px; border-radius: 5px; border: 1px solid #444; background: #2c2c2c; color: #fff; }
     .btn-save { width: 100%; background: #00c853; color: #000; font-weight: bold; border: none; padding: 8px; border-radius: 5px; cursor: pointer; }
     .btn-test { width: 100%; background: #ffaa00; color: #000; font-weight: bold; border: none; padding: 8px; border-radius: 5px; cursor: pointer; margin-top: 6px; }
-    .card { background: #1e1e1e; border-radius: 10px; padding: 15px; margin-bottom: 12px; border-left: 6px solid #888; }
+    .card { background: #1e1e1e; border-radius: 10px; padding: 15px; margin-bottom: 12px; border-left: 6px solid #888; transition: opacity 0.2s; }
     .card.tier-3 { border-color: #ff2a2a; }
     .card.tier-2 { border-color: #9b30ff; }
-    .card-header { display: flex; justify-content: space-between; font-weight: bold; font-size: 16px; margin-bottom: 8px; }
+    .card.is-hidden { opacity: 0.55; border-style: dashed; background: #161616; }
+    .card-header { display: flex; justify-content: space-between; font-weight: bold; font-size: 15px; margin-bottom: 8px; gap: 8px; }
+    .hidden-badge { background: #555; color: #fff; font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-left: 5px; }
     .ff-id-box { background: #2c2c2c; padding: 8px 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; margin: 8px 0; }
-    .ff-id-text { font-family: monospace; font-size: 18px; color: #00ffcc; font-weight: bold; }
-    .btn-copy { background: #007bff; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; }
+    .ff-id-text { font-family: monospace; font-size: 17px; color: #00ffcc; font-weight: bold; }
+    .btn-copy { background: #007bff; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; }
     .msg { font-size: 13px; color: #bbb; margin-bottom: 10px; font-style: italic; }
-    .btn-done { width: 100%; background: #28a745; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; }
+    .action-row { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 6px; }
+    .btn-edit { background: #ff9800; color: #000; border: none; padding: 9px 6px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; }
+    .btn-hide { background: #607d8b; color: white; border: none; padding: 9px 6px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; }
+    .btn-show { background: #00bcd4; color: #000; border: none; padding: 9px 6px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; }
+    .btn-done { background: #28a745; color: white; border: none; padding: 9px 6px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; }
+    /* Modal Edit */
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; padding: 15px; z-index: 99; }
+    .modal-content { background: #1e1e1e; padding: 18px; border-radius: 10px; width: 100%; max-width: 360px; border: 1px solid #444; }
+    .modal-content label { font-size: 12px; color: #bbb; display: block; margin-top: 10px; margin-bottom: 4px; }
+    .modal-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
   </style>
 </head>
 <body>
@@ -31,43 +42,53 @@
     <button class="btn-clear" onclick="clearAll()">Reset Semua</button>
   </div>
 
-  <!-- Kotak Pengaturan Harga Real-Time -->
+  <!-- Pengaturan Harga Real-Time -->
   <div class="box">
     <div style="font-size: 13px; font-weight: bold; margin-bottom: 8px; color: #00ffcc;">⚙️ Atur Tarif Donasi (Rp):</div>
     <div class="price-grid">
-      <div>
-        <label>Biasa</label>
-        <input type="number" id="priceRegular" value="1000">
-      </div>
-      <div>
-        <label>VIP</label>
-        <input type="number" id="priceVip" value="2000">
-      </div>
-      <div>
-        <label>Skip All</label>
-        <input type="number" id="priceSkipAll" value="3000">
-      </div>
+      <div><label>Biasa</label><input type="number" id="priceRegular" value="1000"></div>
+      <div><label>VIP</label><input type="number" id="priceVip" value="2000"></div>
+      <div><label>Skip All</label><input type="number" id="priceSkipAll" value="3000"></div>
     </div>
     <button class="btn-save" onclick="savePrices()">Simpan Tarif Baru</button>
   </div>
 
-  <!-- Kotak Simulasi -->
+  <!-- Kotak Tambah / Tes Manual -->
   <div class="box">
-    <div style="font-size: 13px; font-weight: bold; margin-bottom: 8px;">🧪 Tes Simulasi Donasi:</div>
+    <div style="font-size: 13px; font-weight: bold; margin-bottom: 8px;">➕ Tambah Manual / Tes Simulasi:</div>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px;">
-      <input type="text" id="testName" placeholder="Nama (Budi_FF)">
-      <input type="number" id="testAmount" placeholder="Nominal (3000)">
+      <input type="text" id="testName" placeholder="Nama Pemain">
+      <input type="number" id="testAmount" placeholder="Nominal (misal: 3000)">
     </div>
-    <input type="text" id="testMsg" placeholder="Pesan (ayo bg 11 628373738)">
-    <button class="btn-test" onclick="sendTest()">Kirim Simulasi Donasi</button>
+    <input type="text" id="testMsg" placeholder="ID FF / Pesan (misal: 628373738)">
+    <button class="btn-test" onclick="sendTest()">Masukkan ke Antrean</button>
   </div>
 
   <div id="admin-list"></div>
+
+  <!-- Pop-up Modal Edit -->
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <h3 style="margin:0 0 10px 0; color:#ffaa00;">✏️ Edit Data Pemain</h3>
+      <input type="hidden" id="editId">
+      <label>Nama Pemain:</label>
+      <input type="text" id="editName">
+      <label>Total Nominal Donasi (Rp):</label>
+      <input type="number" id="editAmount">
+      <label>ID Free Fire:</label>
+      <input type="text" id="editFfId">
+      <div class="modal-btns">
+        <button class="btn-clear" onclick="closeModal()">Batal</button>
+        <button class="btn-save" onclick="submitEdit()">Simpan Perubahan</button>
+      </div>
+    </div>
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
     const adminListEl = document.getElementById('admin-list');
+    let currentQueue = [];
 
     socket.on('prices_update', (prices) => {
       document.getElementById('priceRegular').value = prices.regular;
@@ -83,26 +104,69 @@
       alert('Tarif baru berhasil disimpan!');
     }
 
-    socket.on('queue_update', (queue) => {
+    socket.on('admin_queue_update', (queue) => {
+      currentQueue = queue;
       if (queue.length === 0) {
         adminListEl.innerHTML = '<p style="text-align:center; color:#777;">Antrean kosong.</p>';
         return;
       }
-      adminListEl.innerHTML = queue.map((item, idx) => `
-        <div class="card tier-${item.tier}">
-          <div class="card-header">
-            <span>#${idx + 1} ${item.name} (${item.tierName})</span>
-            <span style="color:#ffaa00;">Rp${item.amount.toLocaleString('id-ID')}</span>
+
+      let visibleRank = 0;
+      adminListEl.innerHTML = queue.map((item) => {
+        if (!item.hidden) visibleRank++;
+        const rankLabel = item.hidden ? '⏸️' : `#${visibleRank}`;
+        return `
+          <div class="card tier-${item.tier} ${item.hidden ? 'is-hidden' : ''}">
+            <div class="card-header">
+              <span>
+                ${rankLabel} ${item.name} (${item.tierName})
+                ${item.hidden ? '<span class="hidden-badge">DISEMBUNYIKAN</span>' : ''}
+              </span>
+              <span style="color:#ffaa00;">Rp${item.amount.toLocaleString('id-ID')}</span>
+            </div>
+            <div class="ff-id-box">
+              <span class="ff-id-text">${item.ffId}</span>
+              ${item.ffId !== '-' ? `<button class="btn-copy" onclick="copyID('${item.ffId}')">Salin ID</button>` : ''}
+            </div>
+            <div class="msg">Pesan: "${item.message}"</div>
+            <div class="action-row">
+              <button class="btn-edit" onclick="openEdit('${item.id}')">✏️ Edit</button>
+              <button class="${item.hidden ? 'btn-show' : 'btn-hide'}" onclick="toggleHide('${item.id}')">
+                ${item.hidden ? '👁️ Tampilkan' : '🙈 Sembunyikan'}
+              </button>
+              <button class="btn-done" onclick="removePlayer('${item.id}')">✅ Selesai</button>
+            </div>
           </div>
-          <div class="ff-id-box">
-            <span class="ff-id-text">${item.ffId}</span>
-            ${item.ffId !== '-' ? `<button class="btn-copy" onclick="copyID('${item.ffId}')">Salin ID</button>` : ''}
-          </div>
-          <div class="msg">Pesan asli: "${item.message}"</div>
-          <button class="btn-done" onclick="removePlayer('${item.id}')">✅ Selesai Main / Hapus</button>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     });
+
+    function openEdit(id) {
+      const player = currentQueue.find(p => p.id === id);
+      if (!player) return;
+      document.getElementById('editId').value = player.id;
+      document.getElementById('editName').value = player.name;
+      document.getElementById('editAmount').value = player.amount;
+      document.getElementById('editFfId').value = player.ffId;
+      document.getElementById('editModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('editModal').style.display = 'none';
+    }
+
+    function submitEdit() {
+      const id = document.getElementById('editId').value;
+      const name = document.getElementById('editName').value;
+      const amount = document.getElementById('editAmount').value;
+      const ffId = document.getElementById('editFfId').value;
+      socket.emit('edit_player', { id, name, amount, ffId });
+      closeModal();
+    }
+
+    function toggleHide(id) {
+      socket.emit('toggle_hide', id);
+    }
 
     function copyID(id) {
       navigator.clipboard.writeText(id);
@@ -120,15 +184,18 @@
     }
 
     function sendTest() {
-      const supporter = document.getElementById('testName').value || 'Tester_Pro';
+      const supporter = document.getElementById('testName').value || 'Pemain_Manual';
       const amount = document.getElementById('testAmount').value || 3000;
-      const message = document.getElementById('testMsg').value || 'ayo bg 11 628373738';
+      const message = document.getElementById('testMsg').value || '-';
       fetch('/webhook/sociabuzz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ supporter, amount_raw: amount, message })
       });
+      document.getElementById('testName').value = '';
+      document.getElementById('testAmount').value = '';
+      document.getElementById('testMsg').value = '';
     }
-  </script>
+      </script>
 </body>
 </html>

@@ -14,9 +14,20 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+const queuePath = path.join(__dirname, 'queue.json');
 let queue = [];
+if (fs.existsSync(queuePath)) {
+  try {
+    queue = JSON.parse(fs.readFileSync(queuePath, 'utf8'));
+  } catch (e) {}
+}
 
-// Muat pengaturan harga dari file config.json jika ada, atau pakai default
+function saveQueue() {
+  try {
+    fs.writeFileSync(queuePath, JSON.stringify(queue, null, 2));
+  } catch (e) {}
+}
+
 const configPath = path.join(__dirname, 'config.json');
 let prices = { regular: 1000, vip: 2000, skipAll: 3000 };
 if (fs.existsSync(configPath)) {
@@ -25,10 +36,20 @@ if (fs.existsSync(configPath)) {
   } catch (e) {}
 }
 
+// PERBAIKAN: Ambil elemen pertama (matches[0]) agar berupa string, bukan array
 function extractFFID(message) {
   if (!message) return '-';
-  const matches = message.match(/\b\d{8,12}\b/g);
-  return matches ? matches : '-';
+  const matches = String(message).match(/\b\d{8,12}\b/g);
+  return matches && matches.length > 0 ? matches[0] : '-';
+}
+
+function calculateTier(totalAmount) {
+  if (totalAmount >= prices.skipAll) {
+    return { tier: 3, tierName: 'SKIP ALL' };
+  } else if (totalAmount >= prices.vip) {
+    return { tier: 2, tierName: 'VIP' };
+  }
+  return { tier: 1, tierName: 'BIASA' };
 }
 
 function getSortedQueue() {
@@ -39,48 +60,71 @@ function getSortedQueue() {
   });
 }
 
+function broadcastUpdates() {
+  saveQueue();
+  const sorted = getSortedQueue();
+  io.emit('admin_queue_update', sorted);
+  io.emit('queue_update', sorted.filter(item => !item.hidden));
+}
+
 app.post('/webhook/sociabuzz', (req, res) => {
   const data = req.body;
-  const supporter = data.supporter || data.name || 'Anonim';
+  const supporter = (data.supporter || data.name || 'Anonim').trim();
+  const email = (data.email || data.supporter_email || '').trim().toLowerCase();
   const amount = parseInt(data.amount_raw || data.amount || 0, 10);
   const message = data.message || '';
+  const extractedId = extractFFID(message);
 
-  // Abaikan jika di bawah harga antrean biasa saat ini
+  const existingIndex = queue.findIndex((item) => {
+    const sameEmail = email !== '' && !email.includes('*') && item.email === email;
+    const sameId = extractedId !== '-' && item.ffId !== '-' && item.ffId === extractedId;
+    return sameEmail || sameId;
+  });
+
+  if (existingIndex !== -1) {
+    const existing = queue[existingIndex];
+    const newTotal = existing.amount + amount;
+    const newTierInfo = calculateTier(newTotal);
+
+    existing.amount = newTotal;
+    existing.tier = newTierInfo.tier;
+    existing.tierName = newTierInfo.tierName;
+    if (extractedId !== '-') existing.ffId = extractedId;
+    if (message) existing.message = `${existing.message} | +${amount}: ${message}`;
+
+    broadcastUpdates();
+    return res.status(200).json({ status: 'upgraded', entry: existing });
+  }
+
   if (amount < prices.regular) {
     return res.status(200).json({ status: 'ignored', reason: 'Nominal di bawah minimal antrean' });
   }
 
-  let tier = 1;
-  let tierName = 'BIASA';
-  if (amount >= prices.skipAll) {
-    tier = 3;
-    tierName = 'SKIP ALL';
-  } else if (amount >= prices.vip) {
-    tier = 2;
-    tierName = 'VIP';
-  }
-
+  const tierInfo = calculateTier(amount);
   const newEntry = {
     id: Date.now().toString() + Math.random().toString(36).substring(2, 6),
     name: supporter,
+    email: email,
     amount: amount,
     message: message,
-    ffId: extractFFID(message),
-    tier: tier,
-    tierName: tierName,
+    ffId: extractedId,
+    tier: tierInfo.tier,
+    tierName: tierInfo.tierName,
+    hidden: false,
     timestamp: Date.now()
   };
 
   queue.push(newEntry);
-  io.emit('queue_update', getSortedQueue());
+  broadcastUpdates();
   res.status(200).json({ status: 'success', entry: newEntry });
 });
 
 io.on('connection', (socket) => {
-  socket.emit('queue_update', getSortedQueue());
+  const sorted = getSortedQueue();
+  socket.emit('admin_queue_update', sorted);
+  socket.emit('queue_update', sorted.filter(item => !item.hidden));
   socket.emit('prices_update', prices);
 
-  // Terima pembaruan harga dari halaman admin
   socket.on('update_prices', (newPrices) => {
     prices = {
       regular: parseInt(newPrices.regular, 10) || 1000,
@@ -91,14 +135,36 @@ io.on('connection', (socket) => {
     io.emit('prices_update', prices);
   });
 
+  socket.on('edit_player', (updated) => {
+    const index = queue.findIndex(item => item.id === updated.id);
+    if (index !== -1) {
+      const newAmount = parseInt(updated.amount, 10) || queue[index].amount;
+      const tierInfo = calculateTier(newAmount);
+      queue[index].name = updated.name.trim() || queue[index].name;
+      queue[index].amount = newAmount;
+      queue[index].ffId = updated.ffId.trim() || '-';
+      queue[index].tier = tierInfo.tier;
+      queue[index].tierName = tierInfo.tierName;
+      broadcastUpdates();
+    }
+  });
+
+  socket.on('toggle_hide', (playerId) => {
+    const index = queue.findIndex(item => item.id === playerId);
+    if (index !== -1) {
+      queue[index].hidden = !queue[index].hidden;
+      broadcastUpdates();
+    }
+  });
+
   socket.on('remove_player', (playerId) => {
     queue = queue.filter(item => item.id !== playerId);
-    io.emit('queue_update', getSortedQueue());
+    broadcastUpdates();
   });
 
   socket.on('clear_all', () => {
     queue = [];
-    io.emit('queue_update', getSortedQueue());
+    broadcastUpdates();
   });
 });
 
@@ -109,6 +175,7 @@ server.listen(PORT, '0.0.0.0', async () => {
     if (!fs.existsSync(bin)) {
       await install(bin);
     }
+    // GANTI DENGAN TOKEN CLOUDFLARE PERMANEN KAMU
     const cf = spawn(bin, ['tunnel', 'run', '--token', 'eyJhIjoiNzRiNTZkM2VlZWNlMWU2YjdkOGI4MjFiM2I3NzNhYjEiLCJ0IjoiNjJmZTQ4NmUtYmUwZS00ZjMwLWJhODItMWI5ZDgwODkyMWM3IiwicyI6Ik5USm1abVk0TkRVdFl6VTVPQzAwTm1KbUxXSTBNekF0WmpRMVpqaGxZalEyTmpOaSJ9']);
 
     cf.stderr.on('data', (data) => {
