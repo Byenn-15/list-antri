@@ -102,8 +102,15 @@ io.on('connection', (socket) => {
 });
 
 // Jalankan server di port dinamis (wajib untuk hosting gratis) atau 3000 di lokal
-const PORT = process.env.SERVER_PORT || process.env.PORT || 3513;
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server berjalan di port ${PORT}`);
-});
+const { tunnel } = require('cloudflared');
 
+const PORT = process.env.SERVER_PORT || process.env.PORT || 3513;
+server.listen(PORT, '0.0.0.0', async () => {
+  console.log(`Server lokal berjalan di port ${PORT}`);
+  
+  // Membuat link HTTPS gratis otomatis via Cloudflare Tunnel
+  const { url } = await tunnel({ '--url': `http://localhost:${PORT}` });
+  console.log('====================================');
+  console.log('LINK HTTPS BARU KAMU:', url);
+  console.log('====================================');
+});
