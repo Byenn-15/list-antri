@@ -5,109 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Antrean 1v1 FF</title>
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #121212;
-      color: #fff;
-      margin: 0;
-      padding: 15px;
-    }
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-    }
-    .btn-clear {
-      background: #d9534f;
-      color: white;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .card {
-      background: #1e1e1e;
-      border-radius: 10px;
-      padding: 15px;
-      margin-bottom: 12px;
-      border-left: 6px solid #888;
-    }
+    body { font-family: 'Segoe UI', sans-serif; background: #121212; color: #fff; margin: 0; padding: 15px; }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .btn-clear { background: #d9534f; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    .box { background: #1e1e1e; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #333; }
+    .price-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+    .price-grid label { font-size: 11px; color: #aaa; display: block; margin-bottom: 3px; }
+    input { width: 100%; box-sizing: border-box; padding: 8px; border-radius: 5px; border: none; background: #2c2c2c; color: #fff; }
+    .btn-save { width: 100%; background: #00c853; color: #000; font-weight: bold; border: none; padding: 8px; border-radius: 5px; cursor: pointer; }
+    .btn-test { width: 100%; background: #ffaa00; color: #000; font-weight: bold; border: none; padding: 8px; border-radius: 5px; cursor: pointer; margin-top: 6px; }
+    .card { background: #1e1e1e; border-radius: 10px; padding: 15px; margin-bottom: 12px; border-left: 6px solid #888; }
     .card.tier-3 { border-color: #ff2a2a; }
     .card.tier-2 { border-color: #9b30ff; }
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      font-weight: bold;
-      font-size: 16px;
-      margin-bottom: 8px;
-    }
-    .ff-id-box {
-      background: #2c2c2c;
-      padding: 8px 12px;
-      border-radius: 6px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin: 8px 0;
-    }
-    .ff-id-text {
-      font-family: monospace;
-      font-size: 18px;
-      color: #00ffcc;
-      font-weight: bold;
-    }
-    .btn-copy {
-      background: #007bff;
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .msg {
-      font-size: 13px;
-      color: #bbb;
-      margin-bottom: 10px;
-      font-style: italic;
-    }
-    .btn-done {
-      width: 100%;
-      background: #28a745;
-      color: white;
-      border: none;
-      padding: 10px;
-      border-radius: 6px;
-      font-weight: bold;
-      font-size: 14px;
-      cursor: pointer;
-    }
-    /* Form Tes Simulasi Donasi */
-    .test-box {
-      background: #1a2634;
-      padding: 12px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
-    .test-box input {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 8px;
-      margin-bottom: 8px;
-      border-radius: 5px;
-      border: none;
-    }
-    .btn-test {
-      width: 100%;
-      background: #ffaa00;
-      color: #000;
-      font-weight: bold;
-      border: none;
-      padding: 8px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+    .card-header { display: flex; justify-content: space-between; font-weight: bold; font-size: 16px; margin-bottom: 8px; }
+    .ff-id-box { background: #2c2c2c; padding: 8px 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; margin: 8px 0; }
+    .ff-id-text { font-family: monospace; font-size: 18px; color: #00ffcc; font-weight: bold; }
+    .btn-copy { background: #007bff; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; }
+    .msg { font-size: 13px; color: #bbb; margin-bottom: 10px; font-style: italic; }
+    .btn-done { width: 100%; background: #28a745; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -116,12 +31,34 @@
     <button class="btn-clear" onclick="clearAll()">Reset Semua</button>
   </div>
 
-  <!-- Kotak Simulasi untuk Tes Tanpa Keluar Uang -->
-  <div class="test-box">
-    <div style="font-size: 13px; font-weight: bold; margin-bottom: 8px;">🧪 Tes Simulasi Donasi Masuk:</div>
-    <input type="text" id="testName" placeholder="Nama Penonton (misal: Budi_FF)">
-    <input type="number" id="testAmount" placeholder="Nominal (misal: 3000)">
-    <input type="text" id="testMsg" placeholder="Pesan (misal: ayo bg 11 628373738)">
+  <!-- Kotak Pengaturan Harga Real-Time -->
+  <div class="box">
+    <div style="font-size: 13px; font-weight: bold; margin-bottom: 8px; color: #00ffcc;">⚙️ Atur Tarif Donasi (Rp):</div>
+    <div class="price-grid">
+      <div>
+        <label>Biasa</label>
+        <input type="number" id="priceRegular" value="1000">
+      </div>
+      <div>
+        <label>VIP</label>
+        <input type="number" id="priceVip" value="2000">
+      </div>
+      <div>
+        <label>Skip All</label>
+        <input type="number" id="priceSkipAll" value="3000">
+      </div>
+    </div>
+    <button class="btn-save" onclick="savePrices()">Simpan Tarif Baru</button>
+  </div>
+
+  <!-- Kotak Simulasi -->
+  <div class="box">
+    <div style="font-size: 13px; font-weight: bold; margin-bottom: 8px;">🧪 Tes Simulasi Donasi:</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px;">
+      <input type="text" id="testName" placeholder="Nama (Budi_FF)">
+      <input type="number" id="testAmount" placeholder="Nominal (3000)">
+    </div>
+    <input type="text" id="testMsg" placeholder="Pesan (ayo bg 11 628373738)">
     <button class="btn-test" onclick="sendTest()">Kirim Simulasi Donasi</button>
   </div>
 
@@ -132,12 +69,25 @@
     const socket = io();
     const adminListEl = document.getElementById('admin-list');
 
+    socket.on('prices_update', (prices) => {
+      document.getElementById('priceRegular').value = prices.regular;
+      document.getElementById('priceVip').value = prices.vip;
+      document.getElementById('priceSkipAll').value = prices.skipAll;
+    });
+
+    function savePrices() {
+      const regular = document.getElementById('priceRegular').value;
+      const vip = document.getElementById('priceVip').value;
+      const skipAll = document.getElementById('priceSkipAll').value;
+      socket.emit('update_prices', { regular, vip, skipAll });
+      alert('Tarif baru berhasil disimpan!');
+    }
+
     socket.on('queue_update', (queue) => {
       if (queue.length === 0) {
         adminListEl.innerHTML = '<p style="text-align:center; color:#777;">Antrean kosong.</p>';
         return;
       }
-
       adminListEl.innerHTML = queue.map((item, idx) => `
         <div class="card tier-${item.tier}">
           <div class="card-header">
@@ -156,7 +106,7 @@
 
     function copyID(id) {
       navigator.clipboard.writeText(id);
-      alert('ID FF berhasil disalin: ' + id);
+      alert('ID FF disalin: ' + id);
     }
 
     function removePlayer(id) {
@@ -173,7 +123,6 @@
       const supporter = document.getElementById('testName').value || 'Tester_Pro';
       const amount = document.getElementById('testAmount').value || 3000;
       const message = document.getElementById('testMsg').value || 'ayo bg 11 628373738';
-
       fetch('/webhook/sociabuzz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
